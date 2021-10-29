@@ -5,7 +5,6 @@ import com.switchfully.eurder.api.dto.reports.OrderlineReportDTO;
 import com.switchfully.eurder.api.dto.reports.OrdersReportForCustomerDTO;
 import com.switchfully.eurder.api.mappers.ReportMapper;
 import com.switchfully.eurder.domain.entities.Order;
-import com.switchfully.eurder.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,14 +18,14 @@ import java.util.stream.Collectors;
 public class ReportService {
 
     private final UserService userService;
-    private final OrderRepository orderRepository;
     private final ReportMapper reportMapper;
+    private final OrderService orderService;
 
     @Autowired
-    public ReportService(UserService userService, OrderRepository orderRepository, ReportMapper reportMapper) {
+    public ReportService(UserService userService, ReportMapper reportMapper, OrderService orderService) {
         this.userService = userService;
-        this.orderRepository = orderRepository;
         this.reportMapper = reportMapper;
+        this.orderService = orderService;
     }
 
     public OrdersReportForCustomerDTO getReportOfOrdersForCustomer(UUID userId, UUID customerId) {
@@ -35,23 +34,13 @@ public class ReportService {
 
         List<OrderReportDTO> listOfAllOrdersFromCustomer = new ArrayList<>();
 
-        processorAllOrdersOfTheCustomer(getAllOrdersOfCustomer(customerId), listOfAllOrdersFromCustomer);
+        orderService.getAllOrdersOfCustomer(customerId).forEach(order -> listOfAllOrdersFromCustomer.addAll(processIndividualOrder(order)));
 
         return reportMapper.toOrdersReportForCustomerDTO(listOfAllOrdersFromCustomer, calculateTotalOfAllCustomerOrders(listOfAllOrdersFromCustomer));
     }
 
-    private List<Order> getAllOrdersOfCustomer(UUID customerId) {
-        return orderRepository.getOrders().stream()
-                .filter(order -> order.getCustomerId().equals(customerId))
-                .collect(Collectors.toList());
-    }
-
-    private void processorAllOrdersOfTheCustomer(List<Order> orders, List<OrderReportDTO> listOfAllOrdersFromCustomer) {
-        orders.forEach(order -> processIndividualOrder(order, listOfAllOrdersFromCustomer));
-    }
-
-    private void processIndividualOrder(Order order, List<OrderReportDTO> listOfAllOrdersFromCustomer) {
-        listOfAllOrdersFromCustomer.add(reportMapper.toOrderReportDTO(order.getId(), processOrderlinesOfIndividualOrder(order)));
+    private List<OrderReportDTO> processIndividualOrder(Order order) {
+        return new ArrayList<>(List.of(reportMapper.toOrderReportDTO(order.getId(), processOrderlinesOfIndividualOrder(order))));
     }
 
     private List<OrderlineReportDTO> processOrderlinesOfIndividualOrder(Order order) {

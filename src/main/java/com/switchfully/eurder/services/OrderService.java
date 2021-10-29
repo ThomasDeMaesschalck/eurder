@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -83,6 +85,12 @@ public class OrderService {
         if (amount <= 0) {
             throw new IllegalArgumentException("You can't order 0 or less of an item.");
         }
+    }
+
+    protected List<Order> getAllOrdersOfCustomer(UUID customerId) {
+        return orderRepository.getOrders().stream()
+                .filter(order -> order.getCustomerId().equals(customerId))
+                .collect(Collectors.toList());
     }
 
 }

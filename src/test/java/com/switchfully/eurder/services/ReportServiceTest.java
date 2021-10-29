@@ -76,7 +76,7 @@ class ReportServiceTest {
         createOrderlineDTO2 = new CreateOrderlineDTO(item2UUID, 10);
 
         ReportMapper reportMapper = new ReportMapper();
-        reportService = new ReportService(userService, orderRepository, reportMapper);
+        reportService = new ReportService(userService, reportMapper, orderService);
     }
 
     @Test
